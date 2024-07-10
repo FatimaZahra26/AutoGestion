@@ -1,0 +1,7 @@
+package com.AutoStock.AutoStockVersion1.Repository;
+
+import com.AutoStock.AutoStockVersion1.model.RechargeCarburant;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface RechargeCarburantRepository extends JpaRepository<RechargeCarburant, Long> {
+}
