@@ -1,10 +1,7 @@
 package com.AutoStock.AutoStockVersion1.model;
 
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 import java.util.Date;
 
@@ -12,6 +9,7 @@ import java.util.Date;
 public class Vehicule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID_Vehicule")
     private Long id_vehicule;
 
     private String typePermis;
@@ -20,7 +18,21 @@ public class Vehicule {
     private String etat;
     private int annee;
     private String typeCarburant;
+    private String photo;
+
+
+
+    public String getPhoto() {
+        return photo;
+    }
+
+    public void setPhoto(String photo) {
+        this.photo = photo;
+    }
+
+    @Column(name = "Numéro_Immatriculation")
     private String numeroImmatriculation;
+
     private int kilometrageActuel;
     private Date dateAcquisition;
     private String carteGrise;

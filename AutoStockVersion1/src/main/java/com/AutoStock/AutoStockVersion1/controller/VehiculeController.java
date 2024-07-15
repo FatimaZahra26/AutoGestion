@@ -1,9 +1,9 @@
     package com.AutoStock.AutoStockVersion1.controller;
-
+    import org.springframework.core.io.Resource;
+    import org.springframework.core.io.UrlResource;
 
     import com.AutoStock.AutoStockVersion1.model.Vehicule;
     import com.AutoStock.AutoStockVersion1.service.VehiculeService;
-    import jakarta.annotation.Resource;
     import org.springframework.beans.factory.annotation.Autowired;
     import org.springframework.beans.factory.annotation.Value;
     import org.springframework.core.io.UrlResource;
@@ -16,8 +16,10 @@
 
     import java.io.File;
     import java.io.IOException;
+    import java.nio.file.Files;
     import java.nio.file.Path;
     import java.nio.file.Paths;
+    import java.sql.SQLException;
     import java.util.HashMap;
     import java.util.List;
     import java.util.Map;
@@ -48,6 +50,11 @@
         public void deleteVehicule(@PathVariable Long id) {
             vehiculeService.deleteVehicule(id);
         }
+        @GetMapping("/reparationCounts")
+        public ResponseEntity<Map<Long, Integer>> getReparationCounts() {
+            Map<Long, Integer> reparationCounts = vehiculeService.getReparationCountByVehicule();
+            return ResponseEntity.ok(reparationCounts);
+        }
 
         @Value("${upload.dir}") // Injecte la valeur de 'upload.dir' depuis application.properties
         private String uploadDir;
@@ -74,27 +81,40 @@
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
             }
         }
-        @GetMapping("/downloadFile/{fileName:.+}")
-        public ResponseEntity<Resource> downloadFile(@PathVariable String fileName) {
-            // Chargez le fichier en utilisant son chemin absolu
-            Path filePath = Paths.get(uploadDir).resolve(fileName).normalize();
-            UrlResource resource;
+        @GetMapping("/{filename:.+}")
+        public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
+            Path filePath = Paths.get(uploadDir).resolve(filename).normalize();
             try {
-                   resource = new UrlResource(filePath.toUri());
-                // Vérifiez si le fichier existe et est lisible
+                Resource resource = new UrlResource(filePath.toUri());
+
+                // Vérifiez si la ressource existe et peut être lue
                 if (resource.exists() && resource.isReadable()) {
+                    // Déterminez le type MIME du fichier
+                    String contentType = Files.probeContentType(filePath);
+                    if (contentType == null) {
+                        contentType = "application/octet-stream";
+                    }
+
                     return ResponseEntity.ok()
-                            .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
-                            .body((Resource) resource);
+                            .contentType(MediaType.parseMediaType(contentType))
+                            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                            .body(resource);
                 } else {
                     return ResponseEntity.notFound().build();
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                 e.printStackTrace();
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             }
         }
 
+        @GetMapping("/count")
+        public Long countVehicules() throws SQLException {
+            return vehiculeService.countVehicules();
+        }
+        @GetMapping("/vehicule/{id}")
+        public Vehicule getVehicule(@PathVariable Long id) {
+            return vehiculeService.getVehiculeById(id);
+        }
     }
 

@@ -14,7 +14,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class VehiculeServiceImpl implements VehiculeService {
@@ -49,6 +51,7 @@ public class VehiculeServiceImpl implements VehiculeService {
                 vehicule.setCarteGrise(rs.getString("Carte_Grise"));
                 vehicule.setAssurance(rs.getString("Assurance"));
                 vehicule.setVignette(rs.getString("Vignette"));
+                vehicule.setPhoto(rs.getString("Photo"));
                 vehicules.add(vehicule);
             }
         } catch (SQLException e) {
@@ -60,8 +63,25 @@ public class VehiculeServiceImpl implements VehiculeService {
     @Override
     public Vehicule saveVehicule(Vehicule vehicule) {
         try {
+            // Vérifier si le numéro d'immatriculation existe déjà
+            PreparedStatement checkStatement = connection.prepareStatement(
+                    "SELECT COUNT(*) AS count FROM vehicule WHERE Numéro_Immatriculation = ?"
+            );
+            checkStatement.setString(1, vehicule.getNumeroImmatriculation());
+            ResultSet checkResult = checkStatement.executeQuery();
+            checkResult.next();
+            int count = checkResult.getInt("count");
+
+            if (count > 0) {
+                // Le numéro d'immatriculation existe déjà, peut-être renvoyer une erreur ou gérer la mise à jour
+                // Exemple: return null ou throw new IllegalStateException("Numéro d'immatriculation déjà utilisé");
+                // Pour le démontrer, je vais laisser return vehicule
+                return vehicule;
+            }
+
+            // Insérer le véhicule s'il n'existe pas déjà
             PreparedStatement preparedStatement = connection.prepareStatement(
-                    "INSERT INTO vehicule (Type_Permis, Marque, Modele, Etat, Annee, Type_Carburant, Numéro_Immatriculation, Kilometrage_Actuel, Date_acquisition, Carte_Grise, Assurance, Vignette) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO vehicule (Type_Permis, Marque, Modele, Etat, Annee, Type_Carburant, Numéro_Immatriculation, Kilometrage_Actuel, Date_acquisition, Carte_Grise, Assurance, Vignette, Photo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
             preparedStatement.setString(1, vehicule.getTypePermis());
             preparedStatement.setString(2, vehicule.getMarque());
@@ -75,6 +95,7 @@ public class VehiculeServiceImpl implements VehiculeService {
             preparedStatement.setString(10, vehicule.getCarteGrise());
             preparedStatement.setString(11, vehicule.getAssurance());
             preparedStatement.setString(12, vehicule.getVignette());
+            preparedStatement.setString(13, vehicule.getPhoto());
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -87,7 +108,7 @@ public class VehiculeServiceImpl implements VehiculeService {
     public Vehicule updateVehicule(Vehicule vehicule) {
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(
-                    "UPDATE vehicule SET Type_Permis=?, Marque=?, Modele=?, Etat=?, Annee=?, Type_Carburant=?, Numéro_Immatriculation=?, Kilometrage_Actuel=?, Date_acquisition=?, Carte_Grise=?, Assurance=?, Vignette=? WHERE ID_Vehicule=?"
+                    "UPDATE vehicule SET Type_Permis=?, Marque=?, Modele=?, Etat=?, Annee=?, Type_Carburant=?, Numéro_Immatriculation=?, Kilometrage_Actuel=?, Date_acquisition=?, Carte_Grise=?, Assurance=?, Vignette=?, Photo=? WHERE ID_Vehicule=?"
             );
             preparedStatement.setString(1, vehicule.getTypePermis());
             preparedStatement.setString(2, vehicule.getMarque());
@@ -101,7 +122,8 @@ public class VehiculeServiceImpl implements VehiculeService {
             preparedStatement.setString(10, vehicule.getCarteGrise());
             preparedStatement.setString(11, vehicule.getAssurance());
             preparedStatement.setString(12, vehicule.getVignette());
-            preparedStatement.setLong(13, vehicule.getIdVehicule());
+            preparedStatement.setString(13, vehicule.getPhoto());
+            preparedStatement.setLong(14, vehicule.getIdVehicule());
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -137,5 +159,62 @@ public class VehiculeServiceImpl implements VehiculeService {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public Map<Long, Integer> getReparationCountByVehicule() {
+        Map<Long, Integer> reparationCountMap = new HashMap<>();
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(
+                    "SELECT Vehicule_ID, COUNT(*) as count FROM réparation GROUP BY Vehicule_ID"
+            );
+            ResultSet rs = preparedStatement.executeQuery();
+            while (rs.next()) {
+                reparationCountMap.put(rs.getLong("Vehicule_ID"), rs.getInt("count"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return reparationCountMap;
+    }
+
+    public Long countVehicules() throws SQLException {
+        Long count = 0L;
+        String query = "SELECT COUNT(*) AS total FROM vehicule";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                count = resultSet.getLong("total");
+            }
+        }
+        return count;
+    }
+    @Override
+    public Vehicule getVehiculeById(Long id) {
+        Vehicule vehicule = null;
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM vehicule WHERE ID_Vehicule = ?");
+            preparedStatement.setLong(1, id);
+            ResultSet rs = preparedStatement.executeQuery();
+            if (rs.next()) {
+                vehicule = new Vehicule();
+                vehicule.setIdVehicule(rs.getLong("ID_Vehicule"));
+                vehicule.setTypePermis(rs.getString("Type_Permis"));
+                vehicule.setMarque(rs.getString("Marque"));
+                vehicule.setModele(rs.getString("Modele"));
+                vehicule.setEtat(rs.getString("Etat"));
+                vehicule.setAnnee(rs.getInt("Annee"));
+                vehicule.setTypeCarburant(rs.getString("Type_Carburant"));
+                vehicule.setNumeroImmatriculation(rs.getString("Numéro_Immatriculation"));
+                vehicule.setKilometrageActuel(rs.getInt("Kilometrage_Actuel"));
+                vehicule.setDateAcquisition(rs.getDate("Date_acquisition"));
+                vehicule.setCarteGrise(rs.getString("Carte_Grise"));
+                vehicule.setAssurance(rs.getString("Assurance"));
+                vehicule.setVignette(rs.getString("Vignette"));
+                vehicule.setPhoto(rs.getString("Photo"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return vehicule;
     }
 }
