@@ -29,6 +29,10 @@ public class Bureautique {
     @Temporal(TemporalType.DATE)
     private Date dateEntree;
 
+    @Column(name = "photo")
+    private String photo;
+
+
     // Constructeurs
     public Bureautique() {
     }
@@ -42,6 +46,15 @@ public class Bureautique {
     }
 
     // Getters et Setters
+
+    public String getPhoto() {
+        return photo;
+    }
+
+    public void setPhoto(String photo) {
+        this.photo = photo;
+    }
+
     public long getIdMateriel() {
         return idMateriel;
     }

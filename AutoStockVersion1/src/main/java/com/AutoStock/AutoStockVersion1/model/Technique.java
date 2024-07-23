@@ -31,6 +31,10 @@ public class Technique {
     @Column(name = "marque")
     private String marque;
 
+    @Column(name = "photo")
+    private String photo;
+
+
     // Constructeurs
     public Technique() {
     }
@@ -45,6 +49,14 @@ public class Technique {
     }
 
     // Getters et Setters
+
+    public String getPhoto() {
+        return photo;
+    }
+
+    public void setPhoto(String photo) {
+        this.photo = photo;
+    }
     public long getIdMateriel() {
         return idMateriel;
     }

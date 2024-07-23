@@ -4,9 +4,14 @@ import com.AutoStock.AutoStockVersion1.Repository.TechniqueRepository;
 import com.AutoStock.AutoStockVersion1.exception.ResourceNotFoundException;
 import com.AutoStock.AutoStockVersion1.model.Technique;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +53,7 @@ public class TechniqueController {
         technique.setCaracteristiqueTechnique(techniqueDetails.getCaracteristiqueTechnique());
         technique.setDateEntree(techniqueDetails.getDateEntree());
         technique.setMarque(techniqueDetails.getMarque());
+        technique.setPhoto(techniqueDetails.getPhoto());
 
         Technique updateTechnique = techniqueRepository.save(technique);
         return ResponseEntity.ok(updateTechnique);
@@ -63,5 +69,29 @@ public class TechniqueController {
         Map<String, Boolean> response = new HashMap<>();
         response.put("deleted", Boolean.TRUE);
         return ResponseEntity.ok(response);
+    }
+    ///////////////////////////////////
+    @Value("${upload.dir}")
+    private String uploadDir;
+
+    @PostMapping("/uploadF")
+    public ResponseEntity<Map<String, String>> uploadFile(@RequestParam("file") MultipartFile file) {
+        Map<String, String> response = new HashMap<>();
+        try {
+            File directory = new File(uploadDir);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
+            String filePath = uploadDir + File.separator + file.getOriginalFilename();
+            file.transferTo(new File(filePath));
+
+            response.put("filePath", "/uploads/" + file.getOriginalFilename());
+            return ResponseEntity.ok(response);
+        } catch (IOException e) {
+            e.printStackTrace();
+            response.put("error", "Failed to upload file: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 }
