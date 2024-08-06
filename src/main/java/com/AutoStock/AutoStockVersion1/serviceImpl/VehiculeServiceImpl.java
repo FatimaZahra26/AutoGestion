@@ -1,11 +1,13 @@
 package com.AutoStock.AutoStockVersion1.serviceImpl;
 
+import com.AutoStock.AutoStockVersion1.Repository.VehiculeRepository;
 import com.AutoStock.AutoStockVersion1.model.Vehicule;
 import com.AutoStock.AutoStockVersion1.service.VehiculeService;
 import com.AutoStock.AutoStockVersion1.dbutil.DBUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,6 +34,8 @@ public class VehiculeServiceImpl implements VehiculeService {
     @PersistenceContext
     private EntityManager entityManager;
 
+    @Autowired
+    private VehiculeRepository vehiculeRepository;
 
     public VehiculeServiceImpl() throws SQLException {
         connection = DBUtil.getConnection(); // Assume DBUtil class manages database connection
@@ -236,4 +240,43 @@ public class VehiculeServiceImpl implements VehiculeService {
         }
         return vehicule;
     }
+
+
+    @Override
+    public Vehicule getVehiculeByRegistrationNumber(String registrationNumber) {
+        return vehiculeRepository.findByNumeroImmatriculation(registrationNumber);
+    }
+    @Override
+    public int getRepairCountByVehicule(Long vehiculeId) {
+        int repairCount = 0;
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement("SELECT COUNT(*) AS repairCount FROM réparation WHERE Vehicule_ID = ?");
+            preparedStatement.setLong(1, vehiculeId);
+            ResultSet rs = preparedStatement.executeQuery();
+            if (rs.next()) {
+                repairCount = rs.getInt("repairCount");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return repairCount;
+    }
+
+    @Override
+    public String getChauffeurByVehicule(Long vehiculeId) {
+        String chauffeur = "";
+        try {
+            // Corrected SQL query to select both nom and prenom and concatenate them
+            PreparedStatement preparedStatement = connection.prepareStatement("SELECT CONCAT(c.nom, ' ', c.prenom) AS chauffeurName FROM vehicule v JOIN chauffeur c ON v.ID_Vehicule = c.vehicule_id WHERE v.ID_Vehicule = ?");
+            preparedStatement.setLong(1, vehiculeId);
+            ResultSet rs = preparedStatement.executeQuery();
+            if (rs.next()) {
+                chauffeur = rs.getString("chauffeurName");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return chauffeur;
+    }
+
 }

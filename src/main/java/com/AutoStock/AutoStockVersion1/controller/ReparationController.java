@@ -11,11 +11,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/reparations")
@@ -94,5 +96,10 @@ public class ReparationController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("File upload failed");
         }
+    }
+    @GetMapping("/costs-by-type")
+    public ResponseEntity<  Map<String, BigDecimal>> getTotalCostsByRepairType() throws SQLException {
+        Map<String, BigDecimal> repairCostsByType = reparationService.getTotalCostsByRepairType() ;
+        return ResponseEntity.ok(repairCostsByType);
     }
 }

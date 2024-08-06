@@ -10,8 +10,11 @@ import java.util.List;
 public interface MaintenanceService {
 
     public List<Maintenance> getAllMaintenances();
-    public List<Maintenance> getUpcomingMaintenances();
-    public Maintenance addMaintenance(Maintenance maintenance);
+    public Maintenance getMaintenanceById(Long id);
+    public Maintenance saveMaintenance(Maintenance maintenance);
     public void deleteMaintenance(Long id);
-    public Maintenance updateMaintenance(Maintenance maintenance);
+    public void checkUpcomingMaintenances();
+    List<Maintenance> getUpcomingMaintenances();
+    public Maintenance updateMaintenance(Long id, Maintenance maintenance);
+    public List<Maintenance> getPendingMaintenances();
 }

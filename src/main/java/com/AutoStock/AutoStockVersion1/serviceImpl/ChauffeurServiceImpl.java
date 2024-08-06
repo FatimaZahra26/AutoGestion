@@ -138,7 +138,7 @@ public class ChauffeurServiceImpl implements ChauffeurService {
         ResultSet vehicleResult = null;
         ResultSet assignedResult = null;
 
-
+        try {
             Long vehicleId = null;
             getVehicleIdStmt = connection.prepareStatement(getVehicleIdSql);
             getVehicleIdStmt.setString(1, immatriculation);
@@ -161,6 +161,12 @@ public class ChauffeurServiceImpl implements ChauffeurService {
             isAssigned = count > 0;
 
             if (!isAssigned) {
+                // Set the vehiculeId for the chauffeur before logging history
+                chauffeur.setVehiculeId(vehicleId);
+
+                // Log the update to chauffeur_historique
+                logChauffeurHistory(chauffeur, "UPDATE");
+
                 // Step 3: Update the Chauffeur
                 updateChauffeurStmt = connection.prepareStatement(updateChauffeurSql);
                 updateChauffeurStmt.setString(1, chauffeur.getNom());
@@ -179,28 +185,55 @@ public class ChauffeurServiceImpl implements ChauffeurService {
             } else {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Le véhicule est déjà assigné à un autre chauffeur.");
             }
-
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur SQL lors de la mise à jour du chauffeur.");
+        } finally {
+            if (getVehicleIdStmt != null) getVehicleIdStmt.close();
+            if (checkVehicleAssignedStmt != null) checkVehicleAssignedStmt.close();
+            if (updateChauffeurStmt != null) updateChauffeurStmt.close();
+            if (vehicleResult != null) vehicleResult.close();
+            if (assignedResult != null) assignedResult.close();
+        }
     }
-
-
     @Override
-    public ResponseEntity<String> deleteChauffeur(Long id) {
+    public ResponseEntity<String> deleteChauffeur(Long chauffeurId) {
+        logger.info("Suppression du chauffeur avec ID: " + chauffeurId);
         String sql = "DELETE FROM chauffeur WHERE id_chauffeur = ?";
-
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setLong(1, id);
+            // Log the delete action to chauffeur_historique before deletion
+            Chauffeur chauffeur = chauffeurRepository.findById(chauffeurId).orElse(null);
+            if (chauffeur != null) {
+                logChauffeurHistory(chauffeur, "DELETE");
+            }
 
+            preparedStatement.setLong(1, chauffeurId);
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected > 0) {
-                return ResponseEntity.ok("Chauffeur deleted successfully");
+                return ResponseEntity.ok("Chauffeur supprimé avec succès");
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chauffeur not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chauffeur non trouvé");
             }
         } catch (SQLException e) {
-            logger.error("SQL error while deleting chauffeur", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("SQL error while deleting chauffeur");
+            logger.error("Erreur SQL lors de la suppression du chauffeur", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erreur SQL lors de la suppression du chauffeur");
         }
     }
 
+    private void logChauffeurHistory(Chauffeur chauffeur, String action) {
+        String insertHistorySql = "INSERT INTO chauffeur_historique (id_chauffeur, nom, prenom, telephone, type_permis, vehicule_id, action, date_action) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insertHistorySql)) {
+            preparedStatement.setLong(1, chauffeur.getIdChauffeur());
+            preparedStatement.setString(2, chauffeur.getNom());
+            preparedStatement.setString(3, chauffeur.getPrenom());
+            preparedStatement.setString(4, chauffeur.getTelephone());
+            preparedStatement.setString(5, chauffeur.getTypePermis());
+            preparedStatement.setLong(6, chauffeur.getVehiculeId());
+            preparedStatement.setString(7, action);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Erreur SQL lors de l'enregistrement de l'historique du chauffeur", e);
+        }
 
+    }
 }

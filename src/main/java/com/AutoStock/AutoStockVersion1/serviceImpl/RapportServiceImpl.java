@@ -13,7 +13,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
 @Service
 public class RapportServiceImpl implements RapportService {
 
@@ -170,7 +169,6 @@ public class RapportServiceImpl implements RapportService {
     }    private String generateReportContent(List<Rapport> rapports) {
         StringBuilder content = new StringBuilder();
         content.append("Rapport des coûts\n\n");
-
         for (Rapport rapport : rapports) {
             content.append("ID: ").append(rapport.getIdRapport()).append("\n");
             content.append("Format: ").append(rapport.getFormat()).append("\n");

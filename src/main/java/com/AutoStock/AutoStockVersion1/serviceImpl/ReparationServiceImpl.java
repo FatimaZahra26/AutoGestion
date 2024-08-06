@@ -1,12 +1,15 @@
 package com.AutoStock.AutoStockVersion1.serviceImpl;
 
+import com.AutoStock.AutoStockVersion1.Repository.ReparationRepository;
 import com.AutoStock.AutoStockVersion1.model.Reparation;
 import com.AutoStock.AutoStockVersion1.service.ReparationService;
 import com.AutoStock.AutoStockVersion1.dbutil.DBUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.io.File;
 import java.io.IOException;
@@ -14,12 +17,17 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ReparationServiceImpl implements ReparationService {
 
     private final Connection connection;
+
+    @Autowired
+    private ReparationRepository reparationRepository;
 
     @Value("${upload.dir.reparations}")
     private String uploadDir;
@@ -172,31 +180,50 @@ public class ReparationServiceImpl implements ReparationService {
         }
     }
 
-    @Override
-    public Reparation getReparationById(Long id) {
-        Reparation reparation = null;
-        String sql = "SELECT r.*, v.numéro_immatriculation FROM réparation r " +
-                "JOIN vehicule v ON r.vehicule_id = v.id_vehicule WHERE r.id_réparation = ?";
+@Override
+public Reparation getReparationById(Long id) {
+    Reparation reparation = null;
+    String sql = "SELECT r.*, v.numéro_immatriculation FROM réparation r " +
+            "JOIN vehicule v ON r.vehicule_id = v.id_vehicule WHERE r.id_réparation = ?";
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setLong(1, id);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    reparation = new Reparation();
-                    reparation.setIdReparation(resultSet.getLong("ID_Réparation"));
-                    reparation.setVehiculeId(resultSet.getInt("vehicule_id"));
-                    reparation.setTypeReparation(resultSet.getString("type_réparation"));
-                    reparation.setDateReparation(resultSet.getDate("date_réparation"));
-                    reparation.setCout(resultSet.getBigDecimal("cout"));
-                    reparation.setFournisseur(resultSet.getString("fournisseur"));
-                    reparation.setFacture(resultSet.getString("facture"));
-                    reparation.setRapportReparation(resultSet.getString("rapport_réparation"));
-                    reparation.setImmatriculation(resultSet.getString("numéro_immatriculation"));
-                }
+    try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        preparedStatement.setLong(1, id);
+        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            if (resultSet.next()) {
+                reparation = new Reparation();
+                reparation.setIdReparation(resultSet.getLong("ID_Réparation"));
+                reparation.setVehiculeId(resultSet.getInt("vehicule_id"));
+                reparation.setTypeReparation(resultSet.getString("type_réparation"));
+                reparation.setDateReparation(resultSet.getDate("date_réparation"));
+                reparation.setCout(resultSet.getBigDecimal("cout"));
+                reparation.setFournisseur(resultSet.getString("fournisseur"));
+                reparation.setFacture(resultSet.getString("facture"));
+                reparation.setRapportReparation(resultSet.getString("rapport_réparation"));
+                reparation.setImmatriculation(resultSet.getString("numéro_immatriculation"));
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
-        return reparation;
+    } catch (SQLException e) {
+        e.printStackTrace();
     }
+    return reparation;
+}
+
+@Override
+public Map<String, BigDecimal> getTotalCostsByRepairType() {
+    Map<String, BigDecimal> repairCostsByType = new HashMap<>();
+    String sql = "SELECT Type_Réparation, SUM(cout) as TotalCost FROM réparation GROUP BY Type_Réparation";
+
+    try (Statement statement = connection.createStatement();
+         ResultSet resultSet = statement.executeQuery(sql)) {
+
+        while (resultSet.next()) {
+            String type = resultSet.getString("Type_Réparation");
+            BigDecimal totalCost = resultSet.getBigDecimal("TotalCost");
+            repairCostsByType.put(type, totalCost);
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return repairCostsByType;
+}
 }

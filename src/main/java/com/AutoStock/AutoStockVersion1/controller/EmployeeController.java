@@ -20,7 +20,10 @@ public class EmployeeController {
     public List<Employee> getAllEmployees() {
         return employeeService.getAllEmployees();
     }
-
+@GetMapping("/employeeStocks")
+public List<Employee>getStocksEmployees(){
+        return employeeService.getStocksEmployees();
+}
     @PutMapping("/{id}")
     public Employee updateEmployee(@PathVariable Long id, @RequestBody Employee updatedEmployee) {
         return employeeService.updateEmployee(id, updatedEmployee);
@@ -35,10 +38,17 @@ public class EmployeeController {
     public Long  countEmployees() throws SQLException {
         return employeeService.countEmployees();
     }
+    @GetMapping("/countStocks")
+    public Long  countStocksEmployees() throws SQLException {
+        return employeeService.countStocksEmployees();
+    }
 
     @PostMapping
     public Employee addEmployee(@RequestBody Employee newEmployee) {
+        newEmployee.setSecteur("parc-auto");
+
         employeeService.saveEmployee(newEmployee);
+
         return newEmployee;
     }
 }

@@ -18,4 +18,9 @@ public interface VehiculeService {
     public Long countVehicules() throws SQLException;
     Vehicule saveVehicule(Vehicule vehicule);
     public List<Object[]> getTopVehiclesWithRepairs();
+    Vehicule getVehiculeByRegistrationNumber(String registrationNumber);
+
+    int getRepairCountByVehicule(Long vehiculeId);
+
+    String getChauffeurByVehicule(Long vehiculeId);
 }

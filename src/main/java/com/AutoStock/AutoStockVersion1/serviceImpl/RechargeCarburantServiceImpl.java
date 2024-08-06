@@ -1,5 +1,6 @@
 package com.AutoStock.AutoStockVersion1.serviceImpl;
 
+import com.AutoStock.AutoStockVersion1.Repository.RechargeCarburantRepository;
 import com.AutoStock.AutoStockVersion1.model.RechargeCarburant;
 import com.AutoStock.AutoStockVersion1.service.RechargeCarburantService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +15,9 @@ import java.util.List;
 public class RechargeCarburantServiceImpl implements RechargeCarburantService {
 
     @Autowired
-    private DataSource dataSource; // Assurez-vous d'injecter correctement la source de données JDBC
+    private DataSource dataSource;
+    @Autowired
+    private RechargeCarburantRepository rechargeCarburantRepository;
 
     @Override
     public List<RechargeCarburant> getAllRechargeCarburant() {
@@ -49,11 +52,11 @@ public class RechargeCarburantServiceImpl implements RechargeCarburantService {
             ResultSet rs = preparedStatement.executeQuery();
             if (rs.next()) {
                 recharge = new RechargeCarburant();
-                recharge.setId(rs.getLong("id_recharge"));
+                recharge.setId(rs.getLong("ID_Recharge"));
                 recharge.setVehiculeId(rs.getLong("vehicule_id"));
                 recharge.setDateRecharge(rs.getDate("date_recharge"));
-                recharge.setQuantiteCarburant(rs.getDouble("quantite_carburant"));
-                recharge.setCout(rs.getDouble("cout"));
+                recharge.setQuantiteCarburant(rs.getDouble("quantité_carburant"));
+                recharge.setCout(rs.getDouble("Coût"));
                 recharge.setFournisseur(rs.getString("fournisseur"));
                 recharge.setLieuRecharge(rs.getString("lieu_recharge"));
             }
@@ -101,8 +104,8 @@ public class RechargeCarburantServiceImpl implements RechargeCarburantService {
     public RechargeCarburant updateRechargeCarburant(Long id, RechargeCarburant rechargeCarburant) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(
-                     "UPDATE rechargeCarburant SET vehicule_id = ?, date_recharge = ?, quantite_carburant = ?, " +
-                             "cout = ?, fournisseur = ?, lieu_recharge = ? WHERE id_recharge = ?")) {
+                     "UPDATE rechargeCarburant SET vehicule_id = ?, date_recharge = ?, quantité_carburant = ?, " +
+                             "Coût = ?, fournisseur = ?, lieu_recharge = ? WHERE ID_Recharge = ?")) {
             preparedStatement.setLong(1, rechargeCarburant.getVehiculeId());
             preparedStatement.setDate(2, new Date(rechargeCarburant.getDateRecharge().getTime()));
             preparedStatement.setDouble(3, rechargeCarburant.getQuantiteCarburant());
@@ -115,6 +118,10 @@ public class RechargeCarburantServiceImpl implements RechargeCarburantService {
             if (rowsAffected == 0) {
                 throw new RuntimeException("Updating recharge carburant failed, no rows affected.");
             }
+
+            // Log the update in the historical table
+            logRechargeCarburantHistory(rechargeCarburant, "UPDATE");
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -123,13 +130,40 @@ public class RechargeCarburantServiceImpl implements RechargeCarburantService {
 
     @Override
     public void deleteRechargeCarburant(Long id) {
+        RechargeCarburant rechargeCarburant = getRechargeCarburantById(id);
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM rechargeCarburant WHERE id_recharge = ?")) {
+             PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM rechargeCarburant WHERE ID_Recharge = ?")) {
             preparedStatement.setLong(1, id);
             int rowsAffected = preparedStatement.executeUpdate();
             if (rowsAffected == 0) {
                 throw new RuntimeException("Deleting recharge carburant failed, no rows affected.");
             }
+
+            // Log the deletion in the historical table
+            logRechargeCarburantHistory(rechargeCarburant, "DELETE");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    private void logRechargeCarburantHistory(RechargeCarburant rechargeCarburant, String action) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(
+                     "INSERT INTO historique_rechargecarburant (id_recharge, vehicule_id, date_recharge, quantite_carburant, cout, fournisseur, lieu_recharge, action) " +
+                             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
+            preparedStatement.setLong(1, rechargeCarburant.getId());
+            preparedStatement.setLong(2, rechargeCarburant.getVehiculeId());
+            preparedStatement.setDate(3, new Date(rechargeCarburant.getDateRecharge().getTime()));
+            preparedStatement.setDouble(4, rechargeCarburant.getQuantiteCarburant());
+            preparedStatement.setDouble(5, rechargeCarburant.getCout());
+            preparedStatement.setString(6, rechargeCarburant.getFournisseur());
+            preparedStatement.setString(7, rechargeCarburant.getLieuRecharge());
+            preparedStatement.setString(8, action);
+
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }

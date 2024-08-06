@@ -17,6 +17,16 @@ public class Employee {
     @Column(name = "email")
     private String email;
 
+    public String getSecteur() {
+        return secteur;
+    }
+
+    public void setSecteur(String secteur) {
+        this.secteur = secteur;
+    }
+
+    @Column(name = "secteur")
+    private String secteur;
 
     @Column(name = "phone")
     private String phone;

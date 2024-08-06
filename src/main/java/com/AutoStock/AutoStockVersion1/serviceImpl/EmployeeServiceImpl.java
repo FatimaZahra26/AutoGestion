@@ -18,14 +18,14 @@ public class EmployeeServiceImpl implements EmployeeService {
     Connection connection;
 
     public EmployeeServiceImpl() throws SQLException {
-        connection = DBUtil.getConnection(); // Assume DBUtil class manages database connection
+        connection = DBUtil.getConnection();
     }
 
     @Override
-    public List<Employee> getAllEmployees() {
+     public List<Employee>getStocksEmployees(){
         List<Employee> employees = new ArrayList<>();
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM employee");
+            PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM employee WHERE secteur='stocks'");
             ResultSet rs = preparedStatement.executeQuery();
             while (rs.next()) {
                 Employee employee = new Employee();
@@ -35,6 +35,33 @@ public class EmployeeServiceImpl implements EmployeeService {
                 employee.setPhone(rs.getString("phone"));
                 employee.setAddress(rs.getString("address"));
                 employee.setCIN(rs.getString("cin"));
+                employee.setSecteur(rs.getString("secteur"));
+                employee.setEchelon(rs.getString("echelon"));
+                employee.setPPR(rs.getString("ppr"));
+                employee.setSituation_familiale(rs.getString("situation_familiale"));
+                employee.setNumero_assurance_sociale(rs.getString("numero_assurance_sociale"));
+                employees.add(employee);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return employees;
+     }
+    @Override
+    public List<Employee> getAllEmployees() {
+        List<Employee> employees = new ArrayList<>();
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM employee WHERE secteur='parc-auto'");
+            ResultSet rs = preparedStatement.executeQuery();
+            while (rs.next()) {
+                Employee employee = new Employee();
+                employee.setId(rs.getLong("id"));
+                employee.setName(rs.getString("name"));
+                employee.setEmail(rs.getString("email"));
+                employee.setPhone(rs.getString("phone"));
+                employee.setAddress(rs.getString("address"));
+                employee.setCIN(rs.getString("cin"));
+                employee.setSecteur(rs.getString("secteur"));
                 employee.setEchelon(rs.getString("echelon"));
                 employee.setPPR(rs.getString("ppr"));
                 employee.setSituation_familiale(rs.getString("situation_familiale"));
@@ -49,18 +76,22 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public void saveEmployee(Employee employee) {
+        if (!"parc-auto".equals(employee.getSecteur())) {
+            throw new IllegalArgumentException("Le secteur doit être 'parc-auto'");
+        }
+
         try {
             PreparedStatement preparedStatement;
             if (employee.getId() != null) {
                 // Update existing employee
                 preparedStatement = connection.prepareStatement(
-                        "UPDATE employee SET name=?, email=?, phone=?, address=?, cin=?, situation_familiale=?, ppr=?, numero_assurance_sociale=?, echelon=? WHERE id=?"
+                        "UPDATE employee SET name=?, email=?, phone=?, address=?, cin=?, situation_familiale=?, ppr=?, numero_assurance_sociale=?, echelon=?, secteur=? WHERE id=?"
                 );
-                preparedStatement.setLong(10, employee.getId());
+                preparedStatement.setLong(11, employee.getId());
             } else {
                 // Insert new employee
                 preparedStatement = connection.prepareStatement(
-                        "INSERT INTO employee (name, email, phone, address, cin, situation_familiale, ppr, numero_assurance_sociale, echelon) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        "INSERT INTO employee (name, email, phone, address, cin, situation_familiale, ppr, numero_assurance_sociale, echelon, secteur) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 );
             }
             preparedStatement.setString(1, employee.getName());
@@ -72,6 +103,7 @@ public class EmployeeServiceImpl implements EmployeeService {
             preparedStatement.setString(7, employee.getPPR());
             preparedStatement.setString(8, employee.getNumero_assurance_sociale());
             preparedStatement.setString(9, employee.getEchelon());
+            preparedStatement.setString(10, employee.getSecteur());
 
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -79,11 +111,16 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
     }
 
+
     @Override
     public Employee updateEmployee(Long id, Employee updatedEmployee) {
+        if (!"parc-auto".equals(updatedEmployee.getSecteur())) {
+            throw new IllegalArgumentException("Le secteur doit être 'parc-auto'");
+        }
+
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(
-                    "UPDATE employee SET name=?, email=?, phone=?, address=?, cin=?, situation_familiale=?, ppr=?, numero_assurance_sociale=?, echelon=? WHERE id=?"
+                    "UPDATE employee SET name=?, email=?, phone=?, address=?, cin=?, situation_familiale=?, ppr=?, numero_assurance_sociale=?, echelon=?, secteur=? WHERE id=?"
             );
             preparedStatement.setString(1, updatedEmployee.getName());
             preparedStatement.setString(2, updatedEmployee.getEmail());
@@ -94,7 +131,9 @@ public class EmployeeServiceImpl implements EmployeeService {
             preparedStatement.setString(7, updatedEmployee.getPPR());
             preparedStatement.setString(8, updatedEmployee.getNumero_assurance_sociale());
             preparedStatement.setString(9, updatedEmployee.getEchelon());
-            preparedStatement.setLong(10, id);
+            preparedStatement.setString(10, updatedEmployee.getSecteur());
+
+            preparedStatement.setLong(11, id);
 
             int rowsUpdated = preparedStatement.executeUpdate();
             if (rowsUpdated > 0) {
@@ -109,7 +148,19 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public Long countEmployees() throws SQLException {
         Long count = 0L;
-        String query = "SELECT COUNT(*) AS total FROM employee";
+        String query = "SELECT COUNT(*) AS total FROM employee WHERE secteur='parc-auto'";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                count = resultSet.getLong("total");
+            }
+        }
+        return count;
+    }
+    @Override
+    public Long countStocksEmployees() throws SQLException {
+        Long count = 0L;
+        String query = "SELECT COUNT(*) AS total FROM employee WHERE secteur='stocks'";
         try (PreparedStatement statement = connection.prepareStatement(query)) {
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
