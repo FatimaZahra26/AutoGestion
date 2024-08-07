@@ -1,5 +1,6 @@
 package com.AutoStock.AutoStockVersion1.service;
 
+import com.AutoStock.AutoStockVersion1.model.Chauffeur;
 import com.AutoStock.AutoStockVersion1.model.Reparation;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,4 +16,5 @@ public interface ReparationService {
 
     void deleteReparation(Long id);
     public String uploadFile(MultipartFile file);
+    List<Reparation> getAllReparationByVehiculeId(Long VehiculeId);
 }

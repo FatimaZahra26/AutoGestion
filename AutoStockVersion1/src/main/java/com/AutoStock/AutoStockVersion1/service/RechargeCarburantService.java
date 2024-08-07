@@ -1,6 +1,7 @@
 package com.AutoStock.AutoStockVersion1.service;
 
 
+import com.AutoStock.AutoStockVersion1.model.Chauffeur;
 import com.AutoStock.AutoStockVersion1.model.RechargeCarburant;
 
 import java.util.List;
@@ -11,4 +12,5 @@ public interface RechargeCarburantService {
     RechargeCarburant createRechargeCarburant(RechargeCarburant rechargeCarburant);
     RechargeCarburant updateRechargeCarburant(Long id, RechargeCarburant rechargeCarburant);
     void deleteRechargeCarburant(Long id);
+    List<RechargeCarburant> getAllRechargeCarburantByVehiculeId(Long VehiculeId);
 }

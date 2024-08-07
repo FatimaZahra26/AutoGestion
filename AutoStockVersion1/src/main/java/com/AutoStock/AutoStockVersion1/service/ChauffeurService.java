@@ -8,7 +8,7 @@ import java.util.List;
 
 @Service
 public interface ChauffeurService {
-    public List<Chauffeur>getChauffeurList() throws SQLException;
-    public Long countChauffeurs() throws SQLException;
-
+    List<Chauffeur>getChauffeurList() throws SQLException;
+    Long countChauffeurs() throws SQLException;
+    List<Chauffeur> getAllChauffeursByVehiculeId(Long VehiculeId);
 }
