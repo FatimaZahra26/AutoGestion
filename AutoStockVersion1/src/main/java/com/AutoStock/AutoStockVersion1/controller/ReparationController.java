@@ -1,5 +1,6 @@
 package com.AutoStock.AutoStockVersion1.controller;
 
+import com.AutoStock.AutoStockVersion1.model.Chauffeur;
 import com.AutoStock.AutoStockVersion1.model.Reparation;
 import com.AutoStock.AutoStockVersion1.service.ReparationService;
 import org.apache.commons.io.FilenameUtils;
@@ -96,6 +97,10 @@ public class ReparationController {
             response.put("error", "Could not upload the file: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
+    }
+    @GetMapping("/rapport/{id_vehicule}")
+    public ResponseEntity<List<Reparation>> getAllReparationByVehicule(@PathVariable Long id_vehicule){
+        return new ResponseEntity<>(reparationService.getAllReparationByVehiculeId(id_vehicule), HttpStatus.OK);
     }
 
 }

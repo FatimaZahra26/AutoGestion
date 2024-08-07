@@ -1,5 +1,6 @@
 package com.AutoStock.AutoStockVersion1.controller;
 
+import com.AutoStock.AutoStockVersion1.model.Chauffeur;
 import com.AutoStock.AutoStockVersion1.model.RechargeCarburant;
 import com.AutoStock.AutoStockVersion1.service.RechargeCarburantService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,5 +60,9 @@ public class RechargeCarburantController {
     public ResponseEntity<Void> deleteRechargeCarburant(@PathVariable("id") Long id) {
         rechargeCarburantService.deleteRechargeCarburant(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+    @GetMapping("/rapport/{id_vehicule}")
+    public ResponseEntity<List<RechargeCarburant>> getAllRechargeCarburantByVehicule(@PathVariable Long id_vehicule){
+        return new ResponseEntity<>(rechargeCarburantService.getAllRechargeCarburantByVehiculeId(id_vehicule), HttpStatus.OK);
     }
 }

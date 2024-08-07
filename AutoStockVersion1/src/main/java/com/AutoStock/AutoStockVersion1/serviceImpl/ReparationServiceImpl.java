@@ -1,8 +1,12 @@
         package com.AutoStock.AutoStockVersion1.serviceImpl;
 
+        import com.AutoStock.AutoStockVersion1.Repository.RechargeCarburantRepository;
+        import com.AutoStock.AutoStockVersion1.Repository.ReparationRepository;
+        import com.AutoStock.AutoStockVersion1.model.Chauffeur;
         import com.AutoStock.AutoStockVersion1.model.Reparation;
         import com.AutoStock.AutoStockVersion1.service.ReparationService;
         import com.AutoStock.AutoStockVersion1.dbutil.DBUtil;
+        import org.springframework.beans.factory.annotation.Autowired;
         import org.springframework.stereotype.Service;
         import org.springframework.web.multipart.MultipartFile;
         import java.nio.file.Files;
@@ -26,7 +30,8 @@
             public ReparationServiceImpl() throws SQLException {
                 connection = DBUtil.getConnection();
             }
-
+            @Autowired
+            ReparationRepository reparationRepository ;
             @Override
             public List<Reparation> getAllReparations() {
                 List<Reparation> reparations = new ArrayList<>();
@@ -141,4 +146,10 @@
                     return null; // Handle the error as per your requirement
                 }
             }
+
+            @Override
+            public List<Reparation> getAllReparationByVehiculeId(Long vehiculeId) {
+
+                    return reparationRepository.findAllByVehiculeId(vehiculeId);
+                }
         }
